@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Website</title>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f8f9fa;
+      color: #202124;
+      min-height: 100vh;
+    }
+
+    /* ── Fake website ── */
+    .fake-nav {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+    .fake-logo { font-size: 22px; font-weight: 700; color: #4285f4; }
+    .fake-logo span { color: #ea4335; }
+    .fake-nav-links { display: flex; gap: 24px; }
+    .fake-nav-links a { color: #5f6368; font-size: 14px; text-decoration: none; }
+    .fake-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg,#4285f4,#34a853);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 13px; font-weight: 600;
+    }
+    .fake-content {
+      max-width: 960px; margin: 40px auto; padding: 0 24px;
+      filter: blur(2px); pointer-events: none; user-select: none;
+    }
+    .fake-hero {
+      background: #fff; border-radius: 12px; padding: 48px;
+      margin-bottom: 20px; border: 1px solid #e0e0e0;
+    }
+    .fake-hero h1 { font-size: 28px; margin-bottom: 12px; }
+    .fake-hero p  { color: #5f6368; font-size: 15px; line-height: 1.7; max-width: 520px; }
+    .fake-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .fake-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:20px; height:100px; }
+    .fake-bar  { height:10px; background:#e8eaed; border-radius:4px; margin-bottom:8px; }
+    .fake-bar.s { width:60%; }
+    .fake-line { height:8px; background:#f1f3f4; border-radius:4px; margin-bottom:6px; }
+
+    /* ── Overlay ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(32,33,36,.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      animation: fadeIn .25s ease;
+    }
+    .overlay.hidden { display: none; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    /* ── Popup ── */
+    .popup {
+      background: #fff;
+      border-radius: 28px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.22), 0 4px 12px rgba(0,0,0,.1);
+      width: 400px;
+      max-width: calc(100vw - 32px);
+      overflow: hidden;
+      animation: slideUp .28s cubic-bezier(.34,1.56,.64,1);
+      position: relative;
+    }
+    @keyframes slideUp {
+      from{opacity:0;transform:translateY(24px) scale(.97)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+    .popup-close {
+      position: absolute; top:14px; right:14px;
+      width:36px; height:36px; border-radius:50%;
+      border:none; background:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      color:#5f6368; font-size:18px;
+      transition: background .15s;
+    }
+    .popup-close:hover { background:#f1f3f4; }
+
+    .popup-header { padding: 32px 32px 0; text-align: center; }
+    .google-logo  { display:flex; align-items:center; justify-content:center; gap:2px; margin-bottom:20px; }
+    .google-logo span { font-family:'Google Sans',sans-serif; font-size:28px; font-weight:700; }
+    .g1{color:#4285f4}.g2{color:#ea4335}.g3{color:#fbbc04}
+    .g4{color:#4285f4}.g5{color:#34a853}.g6{color:#ea4335}
+
+    .lock-circle {
+      width:56px; height:56px; border-radius:50%;
+      background:#fce8e6;
+      display:flex; align-items:center; justify-content:center;
+      margin: 0 auto 18px; font-size:26px;
+    }
+    .popup-header h2 {
+      font-family:'Google Sans',sans-serif;
+      font-size:22px; font-weight:400; color:#202124;
+      margin-bottom:8px;
+    }
+    .email-chip {
+      display:inline-flex; align-items:center; gap:6px;
+      background:#f1f3f4; border-radius:20px;
+      padding:4px 12px 4px 6px; font-size:13px; color:#202124; margin-bottom:6px;
+    }
+    .email-chip .dot {
+      width:22px; height:22px; border-radius:50%;
+      background:#4285f4; color:#fff;
+      font-size:11px; font-weight:600;
+      display:flex; align-items:center; justify-content:center;
+    }
+
+    .popup-body { padding:16px 32px 0; }
+    .popup-body p { font-size:14px; color:#5f6368; line-height:1.6; text-align:center; margin-bottom:16px; }
+
+    .warning-box {
+      background:#fef7e0; border:1px solid #fdd663;
+      border-radius:8px; padding:12px 14px;
+      display:flex; gap:10px; align-items:flex-start; margin-bottom:20px;
+    }
+    .warning-box .wi { font-size:16px; flex-shrink:0; margin-top:1px; }
+    .warning-box p   { font-size:13px; color:#5f4200; text-align:left; margin:0; }
+
+    .divider { height:1px; background:#e0e0e0; margin:0 32px; }
+
+    .popup-footer {
+      padding:16px 24px 24px;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+    }
+    .btn-report {
+      background:none; border:none; color:#5f6368;
+      font-family:'Google Sans',sans-serif; font-size:13px; font-weight:500;
+      cursor:pointer; padding:8px 12px; border-radius:4px;
+      transition:background .15s,color .15s;
+      display:flex; align-items:center; gap:6px;
+    }
+    .btn-report:hover { background:#f1f3f4; color:#202124; }
+    .footer-right { display:flex; gap:8px; align-items:center; }
+    .btn-secondary {
+      background:none; border:1px solid #dadce0; color:#1a73e8;
+      font-family:'Google Sans',sans-serif; font-size:14px; font-weight:500;
+      cursor:pointer; padding:9px 20px; border-radius:4px;
+      transition:background .15s;
+    }
+    .btn-secondary:hover { background:#e8f0fe; }
+    .btn-primary {
+      background:#1a73e8; border:none; color:#fff;
+      font-family:'Google Sans',sans-serif; font-size:14px; font-weight:500;
+      cursor:pointer; padding:9px 20px; border-radius:4px;
+      transition:background .15s, box-shadow .15s;
+      box-shadow:0 1px 3px rgba(26,115,232,.4);
+    }
+    .btn-primary:hover { background:#1765cc; }
+
+    /* Toast */
+    .toast {
+      position:fixed; bottom:24px; left:50%;
+      transform:translateX(-50%) translateY(80px);
+      background:#323232; color:#fff; font-size:13px;
+      padding:12px 20px; border-radius:8px;
+      z-index:2000; opacity:0; white-space:nowrap;
+      transition:transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+    }
+    .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+    .spinner {
+      display:inline-block; width:14px; height:14px;
+      border:2px solid #ffffff55; border-top-color:#fff;
+      border-radius:50%; animation:spin .5s linear infinite;
+      vertical-align:middle; margin-right:4px;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* No campaign notice */
+    .no-campaign {
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:#f8f9fa;
+    }
+    .no-campaign.hidden { display:none; }
+    .no-campaign-box {
+      background:#fff; border:1px solid #e0e0e0;
+      border-radius:12px; padding:40px; text-align:center;
+      max-width:360px;
+    }
+    .no-campaign-box h3 { font-size:18px; color:#202124; margin-bottom:8px; }
+    .no-campaign-box p  { font-size:14px; color:#5f6368; }
+  </style>
+</head>
+<body>
+
+<!-- Fake website behind popup -->
+<nav class="fake-nav">
+  <div class="fake-logo">G<span>o</span>ogle</div>
+  <div class="fake-nav-links"><a href="#">Gmail</a><a href="#">Maps</a><a href="#">Drive</a></div>
+  <div class="fake-avatar">R</div>
+</nav>
+<div class="fake-content">
+  <div class="fake-hero">
+    <h1>Welcome back, Rakesh</h1>
+    <p>Here's what's happening with your account today. Review your recent activity and security settings.</p>
+  </div>
+  <div class="fake-cards">
+    <div class="fake-card"><div class="fake-bar"></div><div class="fake-line"></div><div class="fake-line"></div></div>
+    <div class="fake-card"><div class="fake-bar s"></div><div class="fake-line"></div><div class="fake-line"></div></div>
+    <div class="fake-card"><div class="fake-bar"></div><div class="fake-line"></div><div class="fake-line s"></div></div>
+  </div>
+</div>
+
+<!-- No active campaign notice -->
+<div class="no-campaign hidden" id="no-campaign">
+  <div class="no-campaign-box">
+    <h3>No active campaign</h3>
+    <p>The admin has not started a campaign yet. Please check back later.</p>
+  </div>
+</div>
+
+<!-- Popup overlay -->
+<div class="overlay hidden" id="overlay">
+  <div class="popup">
+    <button class="popup-close" onclick="handleClick('close')" title="Close">&#x2715;</button>
+    <div class="popup-header">
+      <div class="google-logo">
+        <span class="g1">G</span><span class="g2">o</span><span class="g3">o</span>
+        <span class="g4">g</span><span class="g5">l</span><span class="g6">e</span>
+      </div>
+      <div class="lock-circle">🔐</div>
+      <h2 id="popup-title">Verify it's you</h2>
+      <div class="email-chip"><div class="dot">R</div>rakesh.rana@gmail.com</div>
+    </div>
+    <div class="popup-body">
+      <p>For your security, Google wants to make sure it's really you. We detected a sign-in from a new device.</p>
+      <div class="warning-box">
+        <span class="wi">⚠️</span>
+        <p>Your password may have been compromised. We recommend resetting it now to keep your account safe.</p>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="popup-footer">
+      <button class="btn-report" onclick="handleClick('report')">⛳ Report</button>
+      <div class="footer-right">
+        <button class="btn-secondary" onclick="handleClick('close')">Not now</button>
+        <button class="btn-primary" id="reset-btn" onclick="handleClick('reset')">Reset password</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = "http://localhost:5000";
+  let deviceId = localStorage.getItem("device_id") || null;
+
+  // Step 1 — Register device on page load
+  async function registerDevice() {
+    try {
+      const res  = await fetch(API + "/api/device/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: deviceId }),
+      });
+      const data = await res.json();
+      deviceId = data.device_id;
+      localStorage.setItem("device_id", deviceId);
+    } catch (e) {
+      console.warn("Could not register device.");
+    }
+  }
+
+  // Step 2 — Check if campaign is active, show popup if yes
+  async function checkCampaign() {
+    try {
+      const res  = await fetch(API + "/api/campaign/status");
+      const data = await res.json();
+
+      if (data.active) {
+        document.getElementById("popup-title").textContent = data.title || "Verify it's you";
+        document.getElementById("overlay").classList.remove("hidden");
+        document.getElementById("no-campaign").classList.add("hidden");
+      } else {
+        document.getElementById("overlay").classList.add("hidden");
+        document.getElementById("no-campaign").classList.remove("hidden");
+      }
+    } catch {
+      document.getElementById("no-campaign").classList.remove("hidden");
+    }
+  }
+
+  // Step 3 — Handle button click
+  async function handleClick(button) {
+    // Visual feedback first
+    if (button === "reset") {
+      const btn = document.getElementById("reset-btn");
+      btn.innerHTML = `<span class="spinner"></span>Sending…`;
+      btn.disabled = true;
+      await new Promise(r => setTimeout(r, 1400));
+      btn.innerHTML = "Reset password";
+      btn.disabled = false;
+      showToast("Password reset email sent to your inbox.");
+    } else if (button === "close") {
+      document.getElementById("overlay").style.opacity = "0";
+      document.getElementById("overlay").style.transition = "opacity .2s";
+      setTimeout(() => document.getElementById("overlay").classList.add("hidden"), 200);
+      showToast("Dismissed");
+    } else if (button === "report") {
+      showToast("Reported as suspicious. Thank you!");
+    }
+
+    // Send to backend
+    try {
+      await fetch(API + "/api/click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: deviceId, button }),
+      });
+    } catch {
+      console.warn("Tracker offline.");
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  // Init
+  (async () => {
+    await registerDevice();
+    await checkCampaign();
+    // Poll every 5 seconds — if admin starts campaign while page is open, popup appears automatically
+    setInterval(checkCampaign, 5000);
+  })();
+</script>
+</body>
+</html>
