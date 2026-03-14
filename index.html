@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Popup Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #0d1117;
+      --surface: #161b22;
+      --card:    #1e2432;
+      --border:  #30363d;
+      --accent:  #58a6ff;
+      --green:   #3fb950;
+      --red:     #f85149;
+      --yellow:  #d29922;
+      --purple:  #bc8cff;
+      --text:    #e6edf3;
+      --muted:   #8b949e;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px; min-height: 100vh;
+    }
+
+    /* ── Login screen ── */
+    .login-screen {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 36px; width: 340px;
+    }
+    .login-box h2 { font-size: 20px; margin-bottom: 6px; }
+    .login-box p  { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+    .field { margin-bottom: 14px; }
+    label  { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px; }
+    input  {
+      width:100%; background:var(--card); border:1px solid var(--border);
+      border-radius:6px; color:var(--text); font-family:inherit;
+      font-size:14px; padding:9px 12px; outline:none;
+      transition:border-color .15s;
+    }
+    input:focus { border-color: var(--accent); }
+    .err { color:var(--red); font-size:13px; margin-top:10px; }
+
+    /* ── Buttons ── */
+    .btn {
+      background:var(--accent); border:none; border-radius:6px;
+      color:#fff; cursor:pointer; font-family:inherit;
+      font-size:14px; font-weight:600; padding:10px 22px;
+      transition:opacity .15s; width:100%;
+    }
+    .btn:hover { opacity:.85; }
+    .btn-ghost {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:6px; color:var(--text); cursor:pointer;
+      font-family:inherit; font-size:13px; padding:7px 14px;
+      transition:background .15s;
+    }
+    .btn-ghost:hover { background:var(--border); }
+    .btn-green {
+      background:#1a7f37; border:none; border-radius:6px;
+      color:#fff; cursor:pointer; font-family:inherit;
+      font-size:14px; font-weight:600; padding:10px 22px;
+      transition:background .15s;
+    }
+    .btn-green:hover { background:#138a2e; }
+    .btn-red {
+      background:none; border:1px solid var(--red);
+      border-radius:6px; color:var(--red); cursor:pointer;
+      font-family:inherit; font-size:14px; font-weight:600;
+      padding:10px 22px; transition:background .15s;
+    }
+    .btn-red:hover { background:#f8514918; }
+    .btn-sm {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:5px; color:var(--muted); cursor:pointer;
+      font-family:inherit; font-size:11px; padding:4px 10px;
+      transition:all .12s;
+    }
+    .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* ── Main layout ── */
+    .main-screen { display:none; }
+    .main-screen.visible { display:block; }
+
+    header {
+      background:var(--surface); border-bottom:1px solid var(--border);
+      padding:14px 28px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .header-left { display:flex; align-items:center; gap:10px; }
+    .live-dot {
+      width:9px; height:9px; background:var(--green);
+      border-radius:50%; box-shadow:0 0 8px var(--green);
+    }
+    header h1 { font-size:16px; font-weight:600; }
+    .header-right { display:flex; gap:10px; align-items:center; }
+
+    main { max-width:1000px; margin:0 auto; padding:28px 20px; }
+
+    /* Campaign control card */
+    .campaign-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; padding:22px 24px; margin-bottom:20px;
+    }
+    .campaign-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .campaign-header h2 { font-size:15px; font-weight:600; }
+    .status-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      border-radius:20px; font-size:12px; font-weight:600;
+      padding:4px 12px; text-transform:uppercase; letter-spacing:.3px;
+    }
+    .status-badge.active   { background:#3fb95020; color:var(--green); }
+    .status-badge.inactive { background:#8b949e20; color:var(--muted); }
+    .status-badge .sd { width:7px; height:7px; border-radius:50%; }
+    .status-badge.active   .sd { background:var(--green); animation:pulse 1.5s infinite; }
+    .status-badge.inactive .sd { background:var(--muted); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .campaign-controls { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+    .campaign-controls .field { margin:0; flex:1; min-width:200px; }
+    .campaign-controls .field label { margin-bottom:6px; }
+
+    /* Stats row */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+    .stat-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; padding:16px 18px; position:relative; overflow:hidden;
+    }
+    .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+    .stat-card.devices::before { background:var(--purple); }
+    .stat-card.total::before   { background:var(--accent); }
+    .stat-card.reset::before   { background:var(--green); }
+    .stat-card.close::before   { background:var(--yellow); }
+    .stat-card.report::before  { background:var(--red); }
+    .stat-num   { font-size:32px; font-weight:700; margin-bottom:4px; }
+    .stat-label { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); }
+    .stat-card.devices .stat-num { color:var(--purple); }
+    .stat-card.total   .stat-num { color:var(--accent); }
+    .stat-card.reset   .stat-num { color:var(--green); }
+    .stat-card.close   .stat-num { color:var(--yellow); }
+    .stat-card.report  .stat-num { color:var(--red); }
+
+    /* Devices table */
+    .section-title {
+      font-size:12px; font-weight:600; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px;
+    }
+    .table-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; overflow:hidden;
+    }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th {
+      background:var(--card); color:var(--muted); font-weight:500;
+      font-size:11px; text-transform:uppercase; letter-spacing:.4px;
+      padding:10px 16px; text-align:left; white-space:nowrap;
+    }
+    tr { border-bottom:1px solid var(--border); }
+    tr:last-child { border-bottom:none; }
+    tr:hover td { background:#ffffff04; }
+    td { padding:11px 16px; vertical-align:middle; }
+
+    .badge {
+      display:inline-block; border-radius:20px;
+      font-size:11px; font-weight:600; padding:3px 9px;
+      text-transform:uppercase; letter-spacing:.3px;
+    }
+    .b-reset  { background:#3fb95020; color:var(--green); }
+    .b-close  { background:#d2992220; color:var(--yellow); }
+    .b-report { background:#f8514920; color:var(--red); }
+
+    .device-id { font-family:monospace; font-size:11px; color:var(--muted); }
+    .no-data   { color:var(--muted); text-align:center; padding:30px; }
+
+    /* Device detail modal */
+    .modal-bg {
+      position:fixed; inset:0; background:rgba(0,0,0,.6);
+      display:flex; align-items:center; justify-content:center;
+      z-index:1000; animation:fadeIn .2s;
+    }
+    .modal-bg.hidden { display:none; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .modal {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; width:560px; max-width:calc(100vw - 32px);
+      max-height:80vh; overflow-y:auto;
+      animation:slideUp .2s ease;
+    }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .modal-header {
+      padding:20px 24px 16px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid var(--border); position:sticky; top:0;
+      background:var(--surface);
+    }
+    .modal-header h3 { font-size:15px; font-weight:600; }
+    .modal-close {
+      background:none; border:none; color:var(--muted); cursor:pointer;
+      font-size:18px; width:32px; height:32px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      transition:background .15s;
+    }
+    .modal-close:hover { background:var(--card); color:var(--text); }
+    .modal-body { padding:20px 24px; }
+    .info-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .info-row:last-child { border-bottom:none; }
+    .info-row .lbl { color:var(--muted); }
+    .info-row .val { color:var(--text); font-weight:500; max-width:300px; word-break:break-all; }
+    .click-list { margin-top:16px; }
+    .click-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;
+    }
+    .click-item:last-child { border-bottom:none; }
+
+    .spinner {
+      display:inline-block; width:14px; height:14px;
+      border:2px solid var(--border); border-top-color:var(--accent);
+      border-radius:50%; animation:spin .5s linear infinite;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <h2>🔐 Admin Login</h2>
+    <p>Enter your admin password to access the dashboard.</p>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="pwd" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')login()"/>
+    </div>
+    <button class="btn" onclick="login()">Login</button>
+    <div class="err hidden" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ── MAIN SCREEN ── -->
+<div class="main-screen" id="main-screen">
+
+  <header>
+    <div class="header-left">
+      <div class="live-dot"></div>
+      <h1>Popup Tracker — Admin</h1>
+    </div>
+    <div class="header-right">
+      <button class="btn-ghost" onclick="loadAll()">↻ Refresh</button>
+      <button class="btn-ghost" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Campaign control -->
+    <div class="campaign-card">
+      <div class="campaign-header">
+        <h2>Campaign Control</h2>
+        <div class="status-badge inactive" id="status-badge">
+          <div class="sd"></div>
+          <span id="status-text">Inactive</span>
+        </div>
+      </div>
+      <div class="campaign-controls">
+        <div class="field">
+          <label>Popup title (shown on all devices)</label>
+          <input type="text" id="campaign-title" placeholder="e.g. Verify it's you" value="Verify it's you"/>
+        </div>
+        <button class="btn-green" id="start-btn" onclick="startCampaign()">▶ Start Campaign</button>
+        <button class="btn-red"   id="stop-btn"  onclick="stopCampaign()" style="display:none">■ Stop Campaign</button>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted)" id="campaign-meta"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card devices">
+        <div class="stat-num" id="s-devices">—</div>
+        <div class="stat-label">Devices visited</div>
+      </div>
+      <div class="stat-card total">
+        <div class="stat-num" id="s-total">—</div>
+        <div class="stat-label">Total clicks</div>
+      </div>
+      <div class="stat-card reset">
+        <div class="stat-num" id="s-reset">—</div>
+        <div class="stat-label">Reset clicked</div>
+      </div>
+      <div class="stat-card close">
+        <div class="stat-num" id="s-close">—</div>
+        <div class="stat-label">Closed</div>
+      </div>
+    </div>
+
+    <!-- Per-device table -->
+    <div class="section-title">Per-device report</div>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Device ID</th>
+              <th>IP Address</th>
+              <th>Reset</th>
+              <th>Close</th>
+              <th>Report</th>
+              <th>Total</th>
+              <th>Last seen</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="devices-body">
+            <tr><td colspan="8" class="no-data">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── DEVICE DETAIL MODAL ── -->
+<div class="modal-bg hidden" id="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Device Detail</h3>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = "http://localhost:5000";
+  let adminToken = sessionStorage.getItem("admin_token") || null;
+
+  // ── Login ──────────────────────────────────────────────────
+  async function login() {
+    const pwd = document.getElementById("pwd").value;
+    const err = document.getElementById("login-err");
+    err.classList.add("hidden");
+
+    try {
+      const res  = await fetch(API + "/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pwd }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        adminToken = data.token;
+        sessionStorage.setItem("admin_token", adminToken);
+        showMain();
+      } else {
+        err.textContent = data.error;
+        err.classList.remove("hidden");
+      }
+    } catch {
+      err.textContent = "Cannot reach server. Is it running?";
+      err.classList.remove("hidden");
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem("admin_token");
+    adminToken = null;
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("main-screen").classList.remove("visible");
+  }
+
+  function showMain() {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("main-screen").classList.add("visible");
+    loadAll();
+    setInterval(loadAll, 5000);
+  }
+
+  // ── Auth headers ───────────────────────────────────────────
+  const authHeaders = () => ({
+    "Content-Type": "application/json",
+    "x-admin-token": adminToken,
+  });
+
+  // ── Campaign ───────────────────────────────────────────────
+  async function startCampaign() {
+    const title = document.getElementById("campaign-title").value || "Verify it's you";
+    await fetch(API + "/api/admin/campaign/start", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ title }),
+    });
+    loadAll();
+  }
+
+  async function stopCampaign() {
+    await fetch(API + "/api/admin/campaign/stop", {
+      method: "POST", headers: authHeaders(),
+    });
+    loadAll();
+  }
+
+  // ── Load all data ──────────────────────────────────────────
+  async function loadAll() {
+    await Promise.all([loadStats(), loadDevices()]);
+  }
+
+  async function loadStats() {
+    try {
+      const res  = await fetch(API + "/api/admin/stats", { headers: authHeaders() });
+      const data = await res.json();
+
+      // Campaign status badge
+      const badge   = document.getElementById("status-badge");
+      const stext   = document.getElementById("status-text");
+      const startBtn = document.getElementById("start-btn");
+      const stopBtn  = document.getElementById("stop-btn");
+      const meta     = document.getElementById("campaign-meta");
+
+      if (data.campaign.active) {
+        badge.className = "status-badge active";
+        stext.textContent = "Active";
+        startBtn.style.display = "none";
+        stopBtn.style.display  = "inline-block";
+        meta.textContent = data.campaign.started_at
+          ? "Started: " + new Date(data.campaign.started_at).toLocaleString()
+          : "";
+      } else {
+        badge.className = "status-badge inactive";
+        stext.textContent = "Inactive";
+        startBtn.style.display = "inline-block";
+        stopBtn.style.display  = "none";
+        meta.textContent = data.campaign.stopped_at
+          ? "Last stopped: " + new Date(data.campaign.stopped_at).toLocaleString()
+          : "No campaign run yet.";
+      }
+
+      // Stats
+      document.getElementById("s-devices").textContent = data.deviceCount;
+      document.getElementById("s-total").textContent   = data.totalClicks;
+
+      const map = {};
+      (data.totals || []).forEach(r => map[r.button] = r.clicks);
+      document.getElementById("s-reset").textContent = map["reset"]  || 0;
+      document.getElementById("s-close").textContent = map["close"]  || 0;
+
+    } catch(e) { console.warn("Stats error", e); }
+  }
+
+  async function loadDevices() {
+    const tbody = document.getElementById("devices-body");
+    try {
+      const res     = await fetch(API + "/api/admin/devices", { headers: authHeaders() });
+      const devices = await res.json();
+
+      if (!devices.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="no-data">No devices have visited yet. Share the popup page link with users.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = devices.map(d => {
+        const bmap = {};
+        (d.buttons || []).forEach(b => bmap[b.button] = b.count);
+        return `
+          <tr>
+            <td class="device-id">${d.device_id.slice(0,8)}…</td>
+            <td style="color:var(--muted);font-size:12px;font-family:monospace">${d.ip || "—"}</td>
+            <td><span class="badge b-reset">${bmap["reset"]  || 0}</span></td>
+            <td><span class="badge b-close">${bmap["close"]  || 0}</span></td>
+            <td><span class="badge b-report">${bmap["report"] || 0}</span></td>
+            <td style="font-weight:600;color:var(--text)">${d.total_clicks}</td>
+            <td style="color:var(--muted);font-size:12px">${d.last_seen ? new Date(d.last_seen).toLocaleString() : "—"}</td>
+            <td><button class="btn-sm" onclick="openDevice('${d.device_id}')">View report</button></td>
+          </tr>
+        `;
+      }).join("");
+    } catch {
+      tbody.innerHTML = `<tr><td colspan="8" class="no-data">Failed to load. Is the server running?</td></tr>`;
+    }
+  }
+
+  // ── Device detail modal ────────────────────────────────────
+  async function openDevice(id) {
+    document.getElementById("modal-bg").classList.remove("hidden");
+    document.getElementById("modal-body").innerHTML = `<div style="text-align:center;padding:20px"><div class="spinner"></div></div>`;
+    document.getElementById("modal-title").textContent = "Device Report";
+
+    try {
+      const res  = await fetch(API + "/api/admin/device/" + id, { headers: authHeaders() });
+      const data = await res.json();
+      const d    = data.device;
+
+      const bmap = {};
+      (data.clicks || []).forEach(c => { bmap[c.button] = (bmap[c.button]||0)+1; });
+
+      document.getElementById("modal-title").textContent = "Device: " + d.device_id.slice(0,8) + "…";
+      document.getElementById("modal-body").innerHTML = `
+        <div class="info-row"><span class="lbl">Full Device ID</span><span class="val" style="font-family:monospace;font-size:11px">${d.device_id}</span></div>
+        <div class="info-row"><span class="lbl">IP Address</span><span class="val">${d.ip || "—"}</span></div>
+        <div class="info-row"><span class="lbl">Browser</span><span class="val" style="font-size:11px">${d.user_agent || "—"}</span></div>
+        <div class="info-row"><span class="lbl">First seen</span><span class="val">${new Date(d.first_seen).toLocaleString()}</span></div>
+        <div class="info-row"><span class="lbl">Last seen</span><span class="val">${new Date(d.last_seen).toLocaleString()}</span></div>
+        <div class="info-row"><span class="lbl">Reset clicked</span><span class="val"><span class="badge b-reset">${bmap["reset"]||0}x</span></span></div>
+        <div class="info-row"><span class="lbl">Close clicked</span><span class="val"><span class="badge b-close">${bmap["close"]||0}x</span></span></div>
+        <div class="info-row"><span class="lbl">Report clicked</span><span class="val"><span class="badge b-report">${bmap["report"]||0}x</span></span></div>
+        <div class="click-list">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Full click history</div>
+          ${data.clicks.length === 0
+            ? `<div style="color:var(--muted);font-size:13px">No clicks recorded yet.</div>`
+            : data.clicks.map(c => `
+              <div class="click-item">
+                <span class="badge b-${c.button}">${c.button}</span>
+                <span style="color:var(--muted);font-size:12px">${new Date(c.clicked_at).toLocaleString()}</span>
+              </div>`).join("")
+          }
+        </div>
+      `;
+    } catch {
+      document.getElementById("modal-body").innerHTML = `<p style="color:var(--red)">Failed to load device data.</p>`;
+    }
+  }
+
+  function closeModal() {
+    document.getElementById("modal-bg").classList.add("hidden");
+  }
+
+  // ── Init ───────────────────────────────────────────────────
+  if (adminToken) {
+    showMain();
+  }
+</script>
+</body>
+</html>
